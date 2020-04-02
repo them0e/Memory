@@ -27,7 +27,7 @@ public class FrameTableEntry extends IflFrameTableEntry
        //the comment to show change
     	//123
     	// your code goes here
-int a= 12;
+int a= 555;
     }
 
 
