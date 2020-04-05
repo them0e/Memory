@@ -14,7 +14,8 @@ import osp.Hardware.*;
 
 public class PageTable extends IflPageTable
 {
-    /**
+	int arraySize;
+	/**
 	   The page table constructor. Must call
 
 	       super(ownerTask)
@@ -28,7 +29,18 @@ public class PageTable extends IflPageTable
     */
     public PageTable(TaskCB ownerTask)
     {
-        // your code goes here
+    	// call super
+    	super(ownerTask);
+    	// get the size of page table
+    	int size = MMU.getPageAddressBits();
+    	arraySize = (int) Math.pow(2, size);
+    	// create page table array
+    	pages = new PageTableEntry[arraySize];
+    	
+    	// initialize the pages
+    	for (int i = 0; i< pages.length; i++)
+    	pages[i] = new PageTableEntry(this, i);
+
 
     }
 
@@ -40,7 +52,30 @@ public class PageTable extends IflPageTable
     */
     public void do_deallocateMemory()
     {
-        // your code goes here
+    	TaskCB task = getTask();
+    	
+    	for (int i=0; i< arraySize; i++) {
+    		
+    		
+    		
+    		FrameTableEntry frame = pages[i].getFrame();
+    		TaskCB frameTask = frame.getPage().getTask();
+    		if (frameTask == task && frame != null)
+    		{
+    			// nullify the page
+    			frame.setPage(null);
+    	    	// clean the page
+    			frame.setDirty(false);
+    	    	// unset the reference
+    			frame.setReferenced(false);
+    			
+    			// check if the task reserved a given frame then unreserves the freed pages 
+    			if(task == frame.getReserved())
+    				frame.setUnreserved(task);
+    		}
+    		
+    	}
+    	
 
     }
 

@@ -25,7 +25,8 @@ public class MMU extends IflMMU
     */
     public static void init()
     {
-        // your code goes here
+    	for (int i=0; i<MMU.getFrameTableSize(); i++)
+    		MMU.setFrame(i, new FrameTableEntry(i));
 
     }
 
@@ -48,10 +49,56 @@ public class MMU extends IflMMU
 
        @OSPProject Memory
     */
-    static public PageTableEntry do_refer(int memoryAddress,
-					  int referenceType, ThreadCB thread)
+    static public PageTableEntry do_refer(int memoryAddress,int referenceType, ThreadCB thread)
     {
         // your code goes here
+    	int pageAddress = (int) (memoryAddress/Math.pow(2, getVirtualAddressBits()-getPageAddressBits()));
+    	PageTableEntry page = getPTBR().pages[pageAddress];
+    	FrameTableEntry pageFrame = page.getFrame();
+    	
+    	//check if the page is valid 
+    	if (!page.isValid()) {
+    		
+    		if (page.getValidatingThread() == null) {
+    			InterruptVector.setPage(page);
+    			InterruptVector.setReferenceType(referenceType);
+    			InterruptVector.setThread(thread);
+    			CPU.interrupt(PageFault);
+    			
+    		}
+    		
+    		else {
+    			thread.suspend(page);
+    			
+    			if (thread.getStatus() != ThreadKill) {
+    				pageFrame.setReferenced(true);
+    				
+    				if (referenceType == MemoryWrite) {
+    					page.getFrame().setDirty(true);
+    				}
+    				
+    			}
+    		}
+    		
+    		
+    	}
+else {
+    		
+    		if (thread.getStatus() != ThreadKill) { /////////////////////!!!!!!!!
+				pageFrame.setReferenced(true);
+				
+				if (referenceType == MemoryWrite) {
+					page.getFrame().setDirty(true);
+				}
+				
+			}
+			
+    		
+    	}
+    	
+    	
+    	return page;
+    	
 
     }
 

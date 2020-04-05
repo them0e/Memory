@@ -25,10 +25,8 @@ public class FrameTableEntry extends IflFrameTableEntry
     public FrameTableEntry(int frameID)
     {
        //the comment to show change
-    	//123
-    	// your code goes here
-int a= 999;
-int b = 10;
+    	// call super
+    	super(frameID);
     }
 
 
