@@ -33,7 +33,7 @@ public class FrameTableEntry extends IflFrameTableEntry
     /*
        Feel free to add methods/fields to improve the readability of your code
     */
-
+ 
 }
 
 /*

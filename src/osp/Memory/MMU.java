@@ -120,7 +120,7 @@ else {
     /** Called by OSP after printing a warning message. The student
 		can insert code here to print various tables and data
 		structures in their state just after the warning happened.
-		The body can be left empty, if this feature is not used.
+		The body can be left empty, if this feature is not used. 
 
       @OSPProject Memory
      */

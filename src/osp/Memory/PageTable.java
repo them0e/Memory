@@ -22,7 +22,7 @@ public class PageTable extends IflPageTable
 
 	   as its first statement. Then it must figure out
 	   what should be the size of a page table, and then
-	   create the page table, populating it with items of
+	   create the page table, populating it with items of 
 	   type, PageTableEntry.
 
 	   @OSPProject Memory

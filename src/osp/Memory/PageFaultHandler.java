@@ -36,7 +36,7 @@ public class PageFaultHandler extends IflPageFaultHandler
 		Note that you have to make sure that the validating thread of
 		a page is set correctly. To this end, you must set the page's
 		validating thread using setValidatingThread() when a pagefault
-		happens and you must set it back to null when the pagefault is over.
+		happens and you must set it back to null when the pagefault is over. 
 
 		If no free frame could be found, then a page replacement algorithm
 		must be used to select a victim page to be replaced.

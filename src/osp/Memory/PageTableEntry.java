@@ -38,7 +38,7 @@ public class PageTableEntry extends IflPageTableEntry
 	   The method must FIRST increment lockCount, THEN
 	   check if the page is valid, and if it is not and no
 	   page validation event is present for the page, start page fault
-	   by calling PageFaultHandler.handlePageFault().
+	   by calling PageFaultHandler.handlePageFault(). 
 
 	   @return SUCCESS or FAILURE
 	   FAILURE happens when the pagefault due to locking fails or the
