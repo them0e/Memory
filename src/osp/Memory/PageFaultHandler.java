@@ -76,15 +76,45 @@ public class PageFaultHandler extends IflPageFaultHandler
 
         @OSPProject Memory
     */
-    public static int do_handlePageFault(ThreadCB thread,
-					 int referenceType,
-					 PageTableEntry page)
+    public static int do_handlePageFault(ThreadCB thread, int referenceTyp, PageTableEntry page)
     {
-        // your code goes here
+        
+    	if (page.isIflValid()) {
+    		
+    		return FAILURE;
+    	}
+    	 if (thread == page.getValidatingThread()) {
+    		 
+    		 thread.suspend(null);
+    	 }
 
     }
 
 
+    public static int numFreeFrames() {
+    	
+//    	Returns the current number of free frames. It does not matter where the
+//    	search in the frame table starts, but this method must not change the value
+//    	of the reference bits, dirty bits or MMU.Cursor .
+    }
+    
+    
+    public static FrameTableEntry getFreeFrame() {
+    	
+    	// Returns the first free frame starting the search from frame[0] .
+    	
+    }
+    
+    
+    public static FrameTableEntry SecondChance() {
+    	
+//    	Frees frames using the following Second Chance approach
+//    	and returns one frame. The search uses the MMU variable MMU.Cursor to
+//    	specify the starting frame index of the search.
+    	
+    }
+    
+    
     /*
        Feel free to add methods/fields to improve the readability of your code
     */

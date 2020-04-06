@@ -15,6 +15,9 @@ import osp.Interrupts.*;
 
     @OSPProject Memory
 */
+
+
+
 public class MMU extends IflMMU
 {
     /**
@@ -23,8 +26,14 @@ public class MMU extends IflMMU
 
         @OSPProject Memory
     */
+	public static int Cursor;
+	public static int wantFree;
+	
     public static void init()
     {
+    	Cursor = 0;
+    	wantFree = 1;
+    	
     	for (int i=0; i<MMU.getFrameTableSize(); i++)
     		MMU.setFrame(i, new FrameTableEntry(i));
 
