@@ -159,13 +159,13 @@ public class PageFaultHandler extends IflPageFaultHandler {
 			}
 		}
 		
-	while(MMU.Cursor < numFreeFrames()) {
+	for(int j=0; j < numFreeFrames(); j++) {
 		
-		NFrame = MMU.getFrame(MMU.Cursor);
+		NFrame = MMU.getFrame(j);
 		if(NFrame.isReferenced()) {
 			
 			NFrame.setReferenced(false);
-			MMU.Cursor--;
+			j--;
 		}
 		else {
 			
@@ -202,7 +202,7 @@ public class PageFaultHandler extends IflPageFaultHandler {
 				NFrame.setPage(null);
 				OPage.setValid(false);
 				OPage.setFrame(null);
-				MMU.Cursor--;
+				j--;
 				
 				page.setFrame(NFrame);
 				
