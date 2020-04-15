@@ -48,32 +48,32 @@ public class PageTableEntry extends IflPageTableEntry
     */
     public int do_lock(IORB iorb)
     {
-    	// increment lockCount
-    			getFrame().incrementLockCount();
+    	ThreadCB iorbThread = iorb.getThread();
     			// check if the page isn't valid
     			if (!isValid()) {
     				// check the validation event doesn't present
     				if (getValidatingThread() == null) {
     					// start page fault
-    					int PFH = PageFaultHandler.handlePageFault(iorb.getThread(), MemoryLock, this);
+    					PageFaultHandler.handlePageFault(iorbThread, GlobalVariables.MemoryLock, this);
     					// check if the pagefault fails
-    					if (PFH == FAILURE || iorb.getThread().getStatus() == ThreadKill)
+    					if (iorbThread.getStatus() == ThreadKill)
     						return FAILURE;
     				}
 
     				// check if the thread caused the page fault equal to this thread
-    				else if (getValidatingThread() != iorb.getThread()) {
+    				else if (getValidatingThread() != iorbThread) {
 
-    					return FAILURE;
-
-    				} else {
     					// suspend thread
-    					iorb.getThread().suspend(this);
+    					iorbThread.suspend(this);
+    				if(!isValid()) {
+    					return FAILURE;
+    				}
     				}
 
     			}
 
-    			
+    	    	// increment lockCount
+    			getFrame().incrementLockCount();
     			return SUCCESS;
 
     }
@@ -88,9 +88,10 @@ public class PageTableEntry extends IflPageTableEntry
     public void do_unlock()
     {
 		// decrement lockCount if is not equal or less than 1
-		if (getFrame().getLockCount() > 0)
+		if (getFrame().getLockCount() <= 0) {return;}
+		else {
 			getFrame().decrementLockCount();
-
+		}
     }
 
 

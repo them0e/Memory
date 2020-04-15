@@ -35,7 +35,7 @@ public class MMU extends IflMMU
     	wantFree = 1;
     	
     	for (int i=0; i<MMU.getFrameTableSize(); i++)
-    		MMU.setFrame(i, new FrameTableEntry(i));
+    		setFrame(i, new FrameTableEntry(i));
 
     }
 
@@ -61,16 +61,17 @@ public class MMU extends IflMMU
     static public PageTableEntry do_refer(int memoryAddress,int referenceType, ThreadCB thread)
     {
         // your code goes here
-    	int pageAddress = (int) (memoryAddress/Math.pow(2, getVirtualAddressBits()-getPageAddressBits()));
+    	int pageAddress =  (memoryAddress/(int)Math.pow(2, getVirtualAddressBits()-getPageAddressBits()));
     	PageTableEntry page = getPTBR().pages[pageAddress];
-    	FrameTableEntry pageFrame = page.getFrame();
+    	
     	
     	//check if the page is valid 
     	if (!page.isValid()) {
     		
     		if (page.getValidatingThread() == null) {
+    			
+    			InterruptVector.setInterruptType(referenceType);
     			InterruptVector.setPage(page);
-    			InterruptVector.setReferenceType(referenceType);
     			InterruptVector.setThread(thread);
     			CPU.interrupt(PageFault);
     			
@@ -78,38 +79,25 @@ public class MMU extends IflMMU
     		
     		else {
     			thread.suspend(page);
-    			
-    			if (thread.getStatus() != ThreadKill) {
-    				pageFrame.setReferenced(true);
-    				
-    				if (referenceType == MemoryWrite) {
-    					page.getFrame().setDirty(true);
-    				}
-    				
-    			}
     		}
-    		
-    		
+    		if (thread.getStatus() == GlobalVariables.ThreadKill) {
+    				
+    				return page;
+    		}
     	}
-else {
-    		
-    		if (thread.getStatus() != ThreadKill) { /////////////////////!!!!!!!!
-				pageFrame.setReferenced(true);
-				
-				if (referenceType == MemoryWrite) {
-					page.getFrame().setDirty(true);
-				}
-				
-			}
+    	
+		page.getFrame().setReferenced(true);
 			
+		if (referenceType == GlobalVariables.MemoryWrite) {
+			
+			page.getFrame().setDirty(true);
+		}
+	return page;
+	}
     		
-    	}
-    	
-    	
-    	return page;
-    	
+    		
+    		
 
-    }
 
 
 
