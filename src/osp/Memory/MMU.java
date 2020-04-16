@@ -65,7 +65,7 @@ public class MMU extends IflMMU
     	PageTableEntry page = getPTBR().pages[pageAddress];
     	
     	
-    	//check if the page is valid 
+    	//check if the page is invalid 
     	if (!page.isValid()) {
     		
     		if (page.getValidatingThread() == null) {

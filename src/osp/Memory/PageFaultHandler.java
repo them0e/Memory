@@ -73,231 +73,116 @@ public class PageFaultHandler extends IflPageFaultHandler {
 	 */
 	public static int do_handlePageFault(ThreadCB thread, int referenceType, PageTableEntry page) {
 		// your code goes here
-		
-//		 First, the pagefault handler might be called incorrectly
-//		 by the other methods in this project. So, we are checking if the page that is
-//		 passed as a parameter is valid (already has a page frame assigned to it) and
-//		 return FAILURE if it is. 
-		
 		if (page.isValid()) {
 			return FAILURE;
 		}
-		else {
-			
-		
-		
+		FrameTableEntry NFrame = null;
+		NFrame = getFreeFrame();
 
-//		Second, it is possible that all frames are either locked 
-//		or reserved and so it is not possible to find a victim page to evict and free up
-//		a frame. Returning NotEnoughMemory if that is the case.
-
-		FrameTableEntry NFrame = getFreeFrame();
+		
 		if (NFrame == null) {
-			return NotEnoughMemory;
+			NFrame = SecondChance();
+			if (NFrame == null)
+				return NotEnoughMemory;
 		}
 
+	page.setValidatingThread(thread);
+ 	Event event = new SystemEvent("PageFaultHappend");
+	thread.suspend(event);
 		
-		// Create a new event: "event" of type SystemEvent()
-		Event event = new SystemEvent("PageFaultHappend");
-		thread.suspend(event);
 
-//		Check if the page is already being brought in by some other thread,
-//		i.e., if the page has already pagefaulted. If that is the case, the thread is suspended on
-//		that page.
-	//	if (thread == page.getValidatingThread()) {
+		if (!NFrame.isReserved() && NFrame.getLockCount() <= 0 ) {
+
+			//event = new SystemEvent("PageFaultHappend");
+			//thread.suspend(event);
+			//page.setValidatingThread(thread);
+			NFrame.setReserved(thread.getTask());
+			//page.setFrame(NFrame);
+			//page.getTask().getSwapFile().read(page.getID(), page, thread);
 			
-		//	thread.suspend(page);
-	//	}
-		
-		// EDITING THIS PART; REWRITING METHODS  
-		
-		
-		
-		for(int i =0; i < MMU.getFrameTableSize(); i++) {
-			
-			NFrame = MMU.getFrame(i);
-			if((NFrame.getPage() == null) && (!NFrame.isReserved()) && (NFrame.getLockCount() <= 0)) {
-					
-				// reserve thread
-					Event PFevent = new SystemEvent("Kernel Switching, page fault just happened");
-					thread.suspend(PFevent);
-					page.setValidatingThread(thread);
-					NFrame.setReserved(thread.getTask());
-					page.setFrame(NFrame);
-					
-					// swap in
-					TaskCB NTask = page.getTask();
-					NTask.getSwapFile().read(page.getID(), page, thread);
-					
-					if(thread.getStatus() == ThreadKill) {
-						
-						// swap in clean up
-						page.setValidatingThread(null);
-						page.setFrame(null);
-						page.notifyThreads();
-						PFevent.notifyThreads();
-						NFrame.setPage(null);
-						
-						ThreadCB.dispatch();
-						return FAILURE;
-					}
-					
-					NFrame.setPage(page);
-					page.setValid(true);
-					
-					//Releasing the Thread
-					if(NFrame.getReserved()==thread.getTask()) {
-						
-						NFrame.setUnreserved(thread.getTask());
-					}
-					page.setValidatingThread(null);
-					page.notifyThreads();
-					PFevent.notifyThreads();
-					
-					ThreadCB.dispatch();
-					return SUCCESS;
-			}
 		}
-		
-	for(int j=0; j < numFreeFrames(); j++) {
-		
-		NFrame = MMU.getFrame(j);
-		if(NFrame.isReferenced()) {
-			
-			NFrame.setReferenced(false);
-			j--;
-		}
-		else {
-			
-			if((NFrame.getPage() != null) && (!NFrame.isReserved()) && (NFrame.getLockCount() <= 0)) {
-				
-				// reserving a thread
-				Event PFevent = new SystemEvent("Kernel Switching, page fault just happened");
-				thread.suspend(PFevent);
-				page.setValidatingThread(thread);
-				NFrame.setReserved(thread.getTask());
-				page.setFrame(NFrame);
-				
-				PageTableEntry OPage = NFrame.getPage();
-				if(NFrame.isDirty()) {
-					
-					//swapping out
-					TaskCB NTask = OPage.getTask();
-					NTask.getSwapFile().write(OPage.getID(), OPage, thread);
-					
-					
-					if(thread.getStatus() == ThreadKill) {
-						// clean up for swapping out
-						page.setValidatingThread(null);
-						page.notifyThreads();
-						PFevent.notifyThreads();
-						
-						ThreadCB.dispatch();
-						return FAILURE;
-					}
-					NFrame.setDirty(false);
-				}
-				
-				NFrame.setReferenced(false);
-				NFrame.setPage(null);
-				OPage.setValid(false);
-				OPage.setFrame(null);
-				j--;
-				
-				page.setFrame(NFrame);
-				
-				//swap in 
-				TaskCB NTask = page.getTask();
-				NTask.getSwapFile().read(page.getID(), page, thread);
-				
-				if(thread.getStatus() == ThreadKill) {
-					
-					// swap in clean up
-					page.setValidatingThread(null);
-					page.setFrame(null);
+
+		PageTableEntry Npage = NFrame.getPage();
+		if (Npage != null) {
+
+			if (NFrame.isDirty()) {
+
+				NFrame.getPage().getTask().getSwapFile().write(NFrame.getPage().getID(), NFrame.getPage(), thread);
+
+				if (thread.getStatus() == GlobalVariables.ThreadKill) {
 					page.notifyThreads();
-					PFevent.notifyThreads();
-					NFrame.setPage(null);
-					
+					event.notifyThreads();
 					ThreadCB.dispatch();
 					return FAILURE;
+
 				}
-				
-				NFrame.setPage(page);
-				page.setValid(true);
-				
-				
-				//Releasing the Thread
-				if(NFrame.getReserved()==thread.getTask()) {
-					
-					NFrame.setUnreserved(thread.getTask());
-				}
-				page.setValidatingThread(null);
-				page.notifyThreads();
-				PFevent.notifyThreads();
-				
-				ThreadCB.dispatch();
-				return SUCCESS;
+
+				NFrame.setDirty(false);
+
 			}
+
+			/*
+			 * NFrame.setReferenced(false); NFrame.setPage(null); Npage.setValid(false);
+			 * Npage.setFrame(null);
+			 */
+
+			NFrame.setReferenced(false);
+			if (Npage != null && Npage.getFrame().getLockCount() == 0) {
+				NFrame.setPage(null);
+				Npage.setValid(false);
+				Npage.setFrame(null);
+
+			}
+
 		}
-	}
-	ThreadCB.dispatch();
-	return NotEnoughMemory;
+
+		page.setFrame(NFrame);
+		//NFrame.setPage(page);
+		page.getTask().getSwapFile().read(page.getID(), page, thread);
+
+		if (thread.getStatus() == ThreadKill) {
+
+
+
+			page.setValidatingThread(null);
+			page.setFrame(null);
+			page.notifyThreads();
+
+			if (NFrame.getReserved() == thread.getTask()) {
+				NFrame.setUnreserved(thread.getTask());
+			}
+
+			NFrame.setReferenced(false);
+			NFrame.setDirty(false);
+			event.notifyThreads();
+			NFrame.setPage(null);
+			ThreadCB.dispatch();
+			return FAILURE;
 		}
-			
-		/*
-		 * // END OF MY EDITING 
-		 * 
-		 * PageTableEntry Npage = NFrame.getPage(); 
-		 * if (Npage != null) {
-		 * 
-		 * if (NFrame.isDirty()) { //swap out
-		 * NFrame.getPage().getTask().getSwapFile().write(NFrame.getPage().getID(),
-		 * NFrame.getPage(), thread);
-		 * 
-		 * if (thread.getStatus() == GlobalVariables.ThreadKill) { page.notifyThreads();
-		 * 
-		 * event.notifyThreads(); ThreadCB.dispatch(); return FAILURE;
-		 * 
-		 * }
-		 * 
-		 * NFrame.setDirty(false);
-		 * 
-		 * }
-		 * 
-		 * NFrame.setReferenced(false); NFrame.setPage(null); Npage.setValid(false);
-		 * Npage.setFrame(null);
-		 * 
-		 * }
-		 * 
-		 * //swap in page.setFrame(NFrame);
-		 * page.getTask().getSwapFile().read(page.getID(), page, thread); // !!!!
-		 * 
-		 * 
-		 * 
-		 * if (thread.getStatus() == ThreadKill) {
-		 * 
-		 * if (NFrame.getPage() != null) {
-		 * 
-		 * if (NFrame.getPage().getTask() == thread.getTask()) {
-		 * 
-		 * NFrame.setPage(null); } }
-		 * 
-		 * page.notifyThreads(); page.setValidatingThread(null); page.setFrame(null);
-		 * 
-		 * event.notifyThreads(); ThreadCB.dispatch(); return FAILURE; }
-		 * 
-		 * NFrame.setPage(page); page.setValid(true);
-		 * 
-		 * if (NFrame.getReserved() == thread.getTask()) {
-		 * NFrame.setUnreserved(thread.getTask()); }
-		 * 
-		 * page.setValidatingThread(null);
-		 * 
-		 * page.notifyThreads(); event.notifyThreads(); ThreadCB.dispatch(); return
-		 * SUCCESS;
-		 */
+
+
+		page.setValid(true);
+		if (NFrame.getReserved() == thread.getTask())
+		{
+			NFrame.setUnreserved(thread.getTask());
+		}
+		NFrame.setReferenced(true);
+		page.notifyThreads();
+		event.notifyThreads();
+
+		if (referenceType == MemoryWrite) {
+			NFrame.setDirty(true);
+		} else {
+			NFrame.setDirty(false);
+		}
+
+		page.setValidatingThread(null);
+	//	page.notifyThreads();
+	//	event.notifyThreads();
+		ThreadCB.dispatch();
+		return SUCCESS;
 	}
+
 
 	static int numFreeFrames() {
 
@@ -317,43 +202,57 @@ public class PageFaultHandler extends IflPageFaultHandler {
 	static FrameTableEntry getFreeFrame() {
 		//int curentFreeFrames = 0;
 		FrameTableEntry frame = null;
-		b: for (int i = 0; i < MMU.getFrameTableSize(); i++) {
+		int i =0;
+		while (i < MMU.getFrameTableSize()) {
 			frame = MMU.getFrame(i);
-			if ((!frame.isReserved()) || (frame.getLockCount() == 0)) {
-				//curentFreeFrames++;
-				break b;
+			if ((!frame.isReserved() && frame.getLockCount() == 0)) {
+				break;
 			}
-
+			i++;
 		}
+//		b: for (int i = 0; i < MMU.getFrameTableSize(); i++) {
+//			frame = MMU.getFrame(i);
+//			if ((!frame.isReserved()) || (frame.getLockCount() == 0)) {
+//				//curentFreeFrames++;
+//				break b;
+//			}
+//
+//		}
 		return frame;
 
 	}
 
-	 FrameTableEntry SecondChance() {
+	 static FrameTableEntry SecondChance() {
 		FrameTableEntry frame;
 		boolean isdirty = true;
 		int frameID = 0;
 		int counter = 0;
 		
-		if(numFreeFrames() < MMU.wantFree) {
+		//Phase I - Batch freeing of occupied frames the clean. 
+		
 		while (counter > (2 * MMU.getFrameTableSize())) {
-			frame = MMU.getFrame(MMU.Cursor);
+			if(numFreeFrames() >= MMU.wantFree) {
+			
+				frame = MMU.getFrame(MMU.Cursor);
 
+				//1. If a page's reference bit is set, clear it and move to the next frame 
 			if (frame.isReferenced()) {
 				frame.setReferenced(false);
+				MMU.Cursor++; // or could try frame = MMU.getFrame(MMU.Cursor + 1);
 			}
 
-			// clean frame
+			// 2. Finding a clean frame
 			if (frame.isReferenced() == false && frame.isReserved() == false && frame.isDirty() == false
-					&& frame.getLockCount() == 0 && numFreeFrames() <= MMU.wantFree) {
-
+					&& frame.getLockCount() == 0) {
+				// a. freeing the frame
 				frame.setPage(null);
 				frame.setDirty(false);
 				frame.setReferenced(false);
-
+				// b. Updating a page table
 				frame.getPage().setFrame(null);
 				frame.getPage().setValid(false);
-
+				
+				
 			}
 			if (frame.isDirty() && isdirty && frame.getLockCount() == 0 && frame.isReserved() == false) {
 				frameID = frame.getID();
@@ -368,21 +267,24 @@ public class PageFaultHandler extends IflPageFaultHandler {
 		 * (numFreeFrames() < MMU.wantFree && isdirty) { FrameTableEntry freeFrame =
 		 * getFreeFrame(); return freeFrame; }
 		 */
-
+		
+		/*- Phase II - Skip if the number of free frames is wantFree, otherwise do the following: */
+		
 		if (numFreeFrames() != MMU.wantFree) {
 			if (!isdirty)
 				return new FrameTableEntry(frameID);
 
-			if (numFreeFrames() < MMU.wantFree && isdirty) {
+			if (numFreeFrames() < MMU.wantFree) {
 				FrameTableEntry freeFrame = getFreeFrame();
 				return freeFrame;
 			}
 
 		}
-
+		/* Phase III - Phase one managed to free "wantFree" frames */
 		else {
 			if (numFreeFrames() == MMU.wantFree) {
-				return getFreeFrame();
+				FrameTableEntry freeFrame = getFreeFrame();
+				return freeFrame;
 			}
 		}
 

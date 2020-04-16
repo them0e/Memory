@@ -56,8 +56,9 @@ public class PageTableEntry extends IflPageTableEntry
     					// start page fault
     					PageFaultHandler.handlePageFault(iorbThread, GlobalVariables.MemoryLock, this);
     					// check if the pagefault fails
-    					if (iorbThread.getStatus() == ThreadKill)
+    					if (iorbThread.getStatus() == ThreadKill) {
     						return FAILURE;
+    					}
     				}
 
     				// check if the thread caused the page fault equal to this thread
@@ -65,9 +66,9 @@ public class PageTableEntry extends IflPageTableEntry
 
     					// suspend thread
     					iorbThread.suspend(this);
-    				if(!isValid()) {
-    					return FAILURE;
-    				}
+    					if(!isValid()) {
+    						return FAILURE;
+    					}
     				}
 
     			}

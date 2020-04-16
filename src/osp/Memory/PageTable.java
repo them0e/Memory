@@ -54,13 +54,15 @@ public class PageTable extends IflPageTable
     {
     	TaskCB task = getTask();
     	
-    	for (int i=0; i< arraySize; i++) {
+    	for (int i=0; i< MMU.getFrameTableSize(); i++) {
     		
     		
     		
-    		FrameTableEntry frame = pages[i].getFrame();
-    		TaskCB frameTask = frame.getPage().getTask();
-    		if (frameTask == task && frame != null)
+    		FrameTableEntry frame = MMU.getFrame(i);
+    		PageTableEntry page = frame.getPage();
+    				
+    		//TaskCB frameTask = page.getTask();
+    		if ( page != null && page.getTask() == task)
     		{
     			// nullify the page
     			frame.setPage(null);
