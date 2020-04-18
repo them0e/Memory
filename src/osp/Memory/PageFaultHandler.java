@@ -356,7 +356,7 @@ public class PageFaultHandler extends IflPageFaultHandler {
 				return freeFrame;
 			}
 		}
-		// Return null if not appropriate frame is found.
+		// Return null if no appropriate frame is found.
 		return null;
 
 	}
