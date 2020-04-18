@@ -66,7 +66,7 @@ public class PageTable extends IflPageTable
     		PageTableEntry page = frame.getPage();
     				
 
-    		if ( page != null && page.getTask() == task)
+    		if ( page != null && page.getTask() == task )
     		{
     			// Nullify the page.
     			frame.setPage(null);
