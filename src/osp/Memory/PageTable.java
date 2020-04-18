@@ -15,18 +15,21 @@ import osp.Hardware.*;
 public class PageTable extends IflPageTable
 {
 	int arraySize;
-	/**
-	   The page table constructor. Must call
+    /** 
+    Purpose: This is the page table constructor. Will call
 
 	       super(ownerTask)
 
-	   as its first statement. Then it must figure out
-	   what should be the size of a page table, and then
-	   create the page table, populating it with items of 
-	   type, PageTableEntry.
+	   as its first statement. Then it will figure out
+	   the size of a page table and create the page table, 
+	   populating it with items of type, PageTableEntry.
 
-	   @OSPProject Memory
-    */
+    			  
+   @OSPProject Memory
+   
+   Authors: Abdulaziz Hasan 1555528, Mohammed Shukri 1647376
+   Date of the Last modification: 15/4/2020
+*/
     public PageTable(TaskCB ownerTask)
     {
     	// call super
@@ -43,13 +46,14 @@ public class PageTable extends IflPageTable
 
 
     }
-
-    /**
-       Frees up main memory occupied by the task.
-       Then unreserves the freed pages, if necessary.
-
-       @OSPProject Memory
-    */
+    /** 
+    Purpose: Freeing up main memory occupied by the task.
+       Then unreserving the freed pages, if necessary.
+   @OSPProject Memory
+   
+   Authors: Abdulaziz Hasan 1555528, Mohammed Shukri 1647376
+   Date of the Last modification: 15/4/2020
+*/
     public void do_deallocateMemory()
     {
     	TaskCB task = getTask();
@@ -61,17 +65,17 @@ public class PageTable extends IflPageTable
     		FrameTableEntry frame = MMU.getFrame(i);
     		PageTableEntry page = frame.getPage();
     				
-    		//TaskCB frameTask = page.getTask();
+
     		if ( page != null && page.getTask() == task)
     		{
-    			// nullify the page
+    			// Nullify the page.
     			frame.setPage(null);
-    	    	// clean the page
+    	    	// Clean the page.
     			frame.setDirty(false);
-    	    	// unset the reference
+    	    	// Unset the reference.
     			frame.setReferenced(false);
     			
-    			// check if the task reserved a given frame then unreserves the freed pages 
+    			// Check if the task reserved a given frame then unreserve the freed pages.
     			if(task == frame.getReserved())
     				frame.setUnreserved(task);
     		}
@@ -82,12 +86,6 @@ public class PageTable extends IflPageTable
     }
 
 
-    /*
-       Feel free to add methods/fields to improve the readability of your code
-    */
 
 }
 
-/*
-      Feel free to add local classes to improve the readability of your code
-*/

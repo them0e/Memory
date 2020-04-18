@@ -8,14 +8,17 @@ import osp.Utilities.*;
 import osp.Hardware.*;
 import osp.Interrupts.*;
 
-/**
-    The MMU class contains the student code that performs the work of
+
+/** 
+Purpose: The MMU class contains code that performs the work of
     handling a memory reference.  It is responsible for calling the
     interrupt handler if a page fault is required.
+			  
+@OSPProject Memory
 
-    @OSPProject Memory
+Authors: Abdulaziz Hasan 1555528, Mohammed Shukri 1647376
+Date of the Last modification: 16/4/2020
 */
-
 
 
 public class MMU extends IflMMU
@@ -39,57 +42,67 @@ public class MMU extends IflMMU
 
     }
 
-    /**
-       This method handlies memory references. The method must
-       calculate, which memory page contains the memoryAddress,
-       determine, whether the page is valid, start page fault
+
+    /** 
+    Purpose: This method handlies memory references. It will
+       calculate which memory page contains the memoryAddress
+       and determine whether the page is valid,. Furthermore, it'll start page fault
        by making an interrupt if the page is invalid, finally,
        if the page is still valid, i.e., not swapped out by another
-       thread while this thread was suspended, set its frame
+       thread while this thread was suspended, it will set its frame
        as referenced and then set it as dirty if necessary.
        (After pagefault, the thread will be placed on the ready queue,
        and it is possible that some other thread will take away the frame.)
+       
+	Inputs:
+       - memoryAddress A virtual memory address
+       - referenceType The type of memory reference to perform
+       - thread that does the memory access (e.g., MemoryRead or MemoryWrite).
+       
+    Output:
+       The referenced page.
 
-       @param memoryAddress A virtual memory address
-       @param referenceType The type of memory reference to perform
-       @param thread that does the memory access
-       (e.g., MemoryRead or MemoryWrite).
-       @return The referenced page.
+    @OSPProject Memory
 
-       @OSPProject Memory
+    Authors: Abdulaziz Hasan 1555528, Mohammed Shukri 1647376
+    Date of the Last modification: 16/4/2020
     */
+
     static public PageTableEntry do_refer(int memoryAddress,int referenceType, ThreadCB thread)
     {
-        // your code goes here
+    	// Compute the page address 
     	int pageAddress =  (memoryAddress/(int)Math.pow(2, getVirtualAddressBits()-getPageAddressBits()));
     	PageTableEntry page = getPTBR().pages[pageAddress];
     	
     	
-    	//check if the page is invalid 
+    	// Check if the page is invalid 
     	if (!page.isValid()) {
-    		
+    		// Check if validation thread of the page is null
     		if (page.getValidatingThread() == null) {
     			
-    			InterruptVector.setInterruptType(referenceType);
+    			InterruptVector.setReferenceType(referenceType);
+    			InterruptVector.setInterruptType(PageFault);
     			InterruptVector.setPage(page);
     			InterruptVector.setThread(thread);
     			CPU.interrupt(PageFault);
-    			
+    			// due to warning 1:
+    			ThreadCB.dispatch();
     		}
     		
     		else {
+    			// Suspend the thread
     			thread.suspend(page);
     		}
+    		// Return the page if the thread status is not "ThreadKill".
     		if (thread.getStatus() == GlobalVariables.ThreadKill) {
     				
     				return page;
     		}
     	}
-    	
+    	// Set the page's frame as referenced.
 		page.getFrame().setReferenced(true);
-			
+		// Set the frame dirty bit to true (dirty) if the reference type is "MemoryWrite".	
 		if (referenceType == GlobalVariables.MemoryWrite) {
-			
 			page.getFrame().setDirty(true);
 		}
 	return page;
@@ -110,7 +123,7 @@ public class MMU extends IflMMU
      */
     public static void atError()
     {
-        // your code goes here (if needed)
+
 
     }
 
@@ -123,17 +136,10 @@ public class MMU extends IflMMU
      */
     public static void atWarning()
     {
-        // your code goes here (if needed)
+
 
     }
 
 
-    /*
-       Feel free to add methods/fields to improve the readability of your code
-    */
-
 }
 
-/*
-      Feel free to add local classes to improve the readability of your code
-*/
